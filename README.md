@@ -86,6 +86,11 @@ src/
 ### Inventory
 - `searchProducts()`
 - `getProduct()`
+- `listVariants()`
+- `listWarehouses()`
+- `listChannels()`
+- `listCategories()`
+- `listStatuses()`
 
 ### Orders
 - `searchOrders()`
