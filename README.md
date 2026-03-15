@@ -76,7 +76,12 @@ src/
 ### CRM
 - `searchLeads()`
 - `getLead()`
-- placeholder `createLead()`
+- `createLead()`
+- `updateLead()`
+- `listLeadStatuses()`
+- `listLeadSources()`
+- `listLeadTypes()`
+- `listPipelines()`
 
 ### Inventory
 - `searchProducts()`
@@ -91,12 +96,11 @@ src/
 1. confirm exact `createLead` GraphQL mutation and input contract
 2. add normalized result mappers
 3. add list helpers for pipelines, statuses, sources, types, warehouses, channels
-4. implement write flows:
-   - create lead
-   - update lead
+4. implement remaining write flows:
    - create draft order
    - update order
    - transition order status
+   - change order customer
 5. wire the final OpenClaw plugin manifest/runtime integration
 6. add tests
 
