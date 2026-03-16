@@ -47,3 +47,47 @@ export interface UpdateLeadInput {
   custom_fields?: Array<Record<string, unknown>>;
   files?: Array<Record<string, unknown>>;
 }
+
+export interface LeadParticipantInput {
+  lead_id: number;
+  people_id: number;
+  relationship_id: number;
+}
+
+export type LeadOutcomeStatus = "Won" | "Lost" | "Close";
+
+export interface LeadMessageInput {
+  channel_slug: string;
+  message: string;
+  parent_id?: string | number;
+  is_public?: number;
+  files?: File[];
+  custom_fields?: Array<Record<string, unknown>>;
+}
+
+export interface LeadAppointmentDateInput {
+  date: string;
+  start_time: string;
+  end_time: string;
+}
+
+export interface LeadAppointmentResourceInput {
+  resources_id: string | number;
+  resources_type: string;
+  custom_fields?: Array<Record<string, unknown>>;
+}
+
+export interface CreateLeadAppointmentInput {
+  name: string;
+  description?: string;
+  resources: LeadAppointmentResourceInput[];
+  dates: LeadAppointmentDateInput[];
+}
+
+export interface LeadFileUploadInput {
+  leadId: string | number;
+  fileName: string;
+  contentType?: string;
+  content: Buffer | Uint8Array | Blob | string;
+  params?: Record<string, unknown>;
+}

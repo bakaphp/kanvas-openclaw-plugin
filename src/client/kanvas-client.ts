@@ -5,6 +5,10 @@ import { ConnectionTestResult, GraphQLResponse } from "./types.js";
 export class KanvasClient {
   constructor(private readonly config: KanvasConfig) {}
 
+  getConfig(): KanvasConfig {
+    return this.config;
+  }
+
   async query<TData>(
     query: string,
     variables: Record<string, unknown> = {},

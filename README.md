@@ -78,6 +78,14 @@ src/
 - `getLead()`
 - `createLead()`
 - `updateLead()`
+- `addLeadParticipant()`
+- `removeLeadParticipant()`
+- `markLeadOutcome()`
+- `createLeadAppointment()`
+- `addLeadMessage()`
+- `listLeadMessages()`
+- `getLeadPrimaryChannelSlug()`
+- `attachFileToLead()`
 - `listLeadStatuses()`
 - `listLeadSources()`
 - `listLeadTypes()`
