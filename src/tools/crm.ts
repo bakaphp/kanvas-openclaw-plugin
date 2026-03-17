@@ -5,6 +5,7 @@ import {
   CreateLeadInput,
   LeadFilesUploadInput,
   LeadFileUploadInput,
+  LeadFollowInput,
   LeadMessageInput,
   LeadOutcomeStatus,
   LeadOwnerOrReceiverChangeInput,
@@ -23,6 +24,10 @@ export function createCrmTools(service: CrmService) {
       service.changeLeadReceiver(input),
     kanvas_add_lead_participant: (input: LeadParticipantInput) => service.addLeadParticipant(input),
     kanvas_remove_lead_participant: (input: LeadParticipantInput) => service.removeLeadParticipant(input),
+    kanvas_follow_lead: (input: LeadFollowInput) => service.followLead(input),
+    kanvas_unfollow_lead: (input: LeadFollowInput) => service.unFollowLead(input),
+    kanvas_delete_lead: (id: string) => service.deleteLead(id),
+    kanvas_restore_lead: (id: string) => service.restoreLead(id),
     kanvas_mark_lead_outcome: (id: string, status: LeadOutcomeStatus, reason_lost?: string) =>
       service.markLeadOutcome(id, status, reason_lost),
     kanvas_create_lead_appointment: (input: CreateLeadAppointmentInput) =>

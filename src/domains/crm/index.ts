@@ -6,6 +6,7 @@ import {
   CreateLeadInput,
   LeadFilesUploadInput,
   LeadFileUploadInput,
+  LeadFollowInput,
   LeadMessageInput,
   LeadOutcomeStatus,
   LeadOwnerOrReceiverChangeInput,
@@ -83,6 +84,35 @@ export class CrmService {
             pipeline { id name }
             owner { id uuid displayname }
             receiver { id name uuid }
+            followers(first: 25) {
+              data {
+                id
+                uuid
+                displayname
+              }
+            }
+            channel_files(includeParticipants: true, groupByAction: true) {
+              total_groups
+              groups {
+                id
+                uuid
+                action
+                verb
+                status
+                participant_name
+                created_at
+                last_message_at
+                files {
+                  id
+                  name
+                  url
+                  file_type
+                  size
+                  verification_status
+                  verification_message
+                }
+              }
+            }
             channels {
               id
               name
@@ -234,6 +264,46 @@ export class CrmService {
     `;
 
     return this.client.query(mutation, { input });
+  }
+
+  async followLead(input: LeadFollowInput) {
+    const mutation = `
+      mutation FollowLead($input: FollowInput!) {
+        followLead(input: $input)
+      }
+    `;
+
+    return this.client.query(mutation, { input });
+  }
+
+  async unFollowLead(input: LeadFollowInput) {
+    const mutation = `
+      mutation UnFollowLead($input: FollowInput!) {
+        unFollowLead(input: $input)
+      }
+    `;
+
+    return this.client.query(mutation, { input });
+  }
+
+  async deleteLead(id: string) {
+    const mutation = `
+      mutation DeleteLead($id: ID!) {
+        deleteLead(id: $id)
+      }
+    `;
+
+    return this.client.query(mutation, { id });
+  }
+
+  async restoreLead(id: string) {
+    const mutation = `
+      mutation RestoreLead($id: ID!) {
+        restoreLead(id: $id)
+      }
+    `;
+
+    return this.client.query(mutation, { id });
   }
 
   async markLeadOutcome(id: string, status: LeadOutcomeStatus, reason_lost?: string) {

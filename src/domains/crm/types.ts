@@ -119,3 +119,8 @@ export interface LeadOwnerOrReceiverChangeInput {
   leads_owner_id?: string | number;
   receiver_id?: string | number;
 }
+
+export interface LeadFollowInput {
+  entity_id: string;
+  user_id: string | number;
+}
