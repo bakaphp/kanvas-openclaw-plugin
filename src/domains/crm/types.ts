@@ -65,6 +65,15 @@ export interface LeadMessageInput {
   custom_fields?: Array<Record<string, unknown>>;
 }
 
+export interface AddLeadMessageByIdInput {
+  leadId: string | number;
+  message: string;
+  parent_id?: string | number;
+  is_public?: number;
+  custom_fields?: Array<Record<string, unknown>>;
+  attachments?: LeadFileLike[];
+}
+
 export interface LeadAppointmentDateInput {
   date: string;
   start_time: string;
@@ -84,10 +93,29 @@ export interface CreateLeadAppointmentInput {
   dates: LeadAppointmentDateInput[];
 }
 
-export interface LeadFileUploadInput {
-  leadId: string | number;
+export interface LeadFileLike {
   fileName: string;
   contentType?: string;
   content: Buffer | Uint8Array | Blob | string;
+}
+
+export interface LeadFileUploadInput extends LeadFileLike {
+  leadId: string | number;
   params?: Record<string, unknown>;
+}
+
+export interface LeadFilesUploadInput {
+  leadId: string | number;
+  files: LeadFileLike[];
+  params?: Record<string, unknown>;
+}
+
+export interface LeadOwnerOrReceiverChangeInput {
+  leadId: string | number;
+  branch_id: string | number;
+  people_id: string | number;
+  title?: string;
+  description?: string;
+  leads_owner_id?: string | number;
+  receiver_id?: string | number;
 }

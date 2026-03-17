@@ -1,11 +1,14 @@
 import { KanvasClient } from "../../client/kanvas-client.js";
 import { postGraphQLMultipart } from "../../client/multipart.js";
 import {
+  AddLeadMessageByIdInput,
   CreateLeadAppointmentInput,
   CreateLeadInput,
+  LeadFilesUploadInput,
   LeadFileUploadInput,
   LeadMessageInput,
   LeadOutcomeStatus,
+  LeadOwnerOrReceiverChangeInput,
   LeadParticipantInput,
   UpdateLeadInput,
 } from "./types.js";
@@ -15,6 +18,23 @@ interface LeadChannelsResponse {
     data?: Array<{
       channels?: Array<{ id: string; slug: string; name?: string }>;
     }>;
+  };
+}
+
+interface GraphQLEnvelope<T> {
+  data?: T;
+  errors?: Array<{ message?: string }>;
+}
+
+interface CreateMessageResponse {
+  createMessage: {
+    id: string;
+    uuid?: string;
+    slug?: string;
+    message?: string;
+    created_at?: string;
+    messageType?: { name?: string };
+    channels?: Array<{ id: string; slug: string; name?: string }>;
   };
 }
 
@@ -176,6 +196,26 @@ export class CrmService {
     return this.client.query(mutation, { id, input });
   }
 
+  async changeLeadOwner(input: LeadOwnerOrReceiverChangeInput) {
+    return this.updateLead(String(input.leadId), {
+      branch_id: input.branch_id,
+      people_id: input.people_id,
+      title: input.title,
+      description: input.description,
+      leads_owner_id: input.leads_owner_id,
+    });
+  }
+
+  async changeLeadReceiver(input: LeadOwnerOrReceiverChangeInput) {
+    return this.updateLead(String(input.leadId), {
+      branch_id: input.branch_id,
+      people_id: input.people_id,
+      title: input.title,
+      description: input.description,
+      receiver_id: input.receiver_id,
+    });
+  }
+
   async addLeadParticipant(input: LeadParticipantInput) {
     const mutation = `
       mutation AddLeadParticipant($input: LeadsParticipantsInput!) {
@@ -280,6 +320,38 @@ export class CrmService {
         custom_fields: input.custom_fields,
       },
     });
+  }
+
+  async addLeadMessageByLeadId(input: AddLeadMessageByIdInput) {
+    const channelSlug = await this.getLeadPrimaryChannelSlug(String(input.leadId));
+
+    if (!channelSlug) {
+      throw new Error(`No lead channel found for lead ${input.leadId}`);
+    }
+
+    const created = await this.addLeadMessage({
+      channel_slug: channelSlug,
+      message: input.message,
+      parent_id: input.parent_id,
+      is_public: input.is_public,
+      custom_fields: input.custom_fields,
+    });
+
+    if (!input.attachments?.length) {
+      return created;
+    }
+
+    const messageId = (created as GraphQLEnvelope<CreateMessageResponse>).data?.createMessage?.id;
+    if (!messageId) {
+      throw new Error("Lead message created but message id was missing for attachment upload");
+    }
+
+    const attachmentResult = await this.attachFilesToMessage(messageId, input.attachments);
+
+    return {
+      ...created,
+      attachments: attachmentResult,
+    };
   }
 
   async listLeadMessages(channelSlug: string, first = 50, page = 1) {
@@ -394,6 +466,89 @@ export class CrmService {
         },
       ],
     });
+  }
+
+  async attachFilesToLead(input: LeadFilesUploadInput) {
+    const query = `
+      mutation AttachFilesToLead($id: ID!, $file: [Upload!]!, $params: Mixed) {
+        attachFilesToLead(id: $id, file: $file, params: $params) {
+          id
+          uuid
+          title
+          files {
+            data {
+              id
+              uuid
+              name
+              url
+              type
+            }
+          }
+        }
+      }
+    `;
+
+    return postGraphQLMultipart({
+      config: this.client.getConfig(),
+      query,
+      variables: {
+        id: input.leadId,
+        file: new Array(input.files.length).fill(null),
+        params: input.params ?? null,
+      },
+      files: input.files.map((file, index) => ({
+        key: `variables.file.${index}`,
+        fileName: file.fileName,
+        contentType: file.contentType,
+        content: file.content,
+      })),
+    });
+  }
+
+  async attachFileToMessage(messageId: string | number, file: LeadFileUploadInput["content"], fileName: string, contentType?: string) {
+    const query = `
+      mutation AttachFileToMessage($message_id: ID!, $file: Upload!) {
+        attachFileToMessage(message_id: $message_id, file: $file) {
+          id
+          uuid
+          message
+          files {
+            data {
+              id
+              uuid
+              name
+              url
+              type
+            }
+          }
+        }
+      }
+    `;
+
+    return postGraphQLMultipart({
+      config: this.client.getConfig(),
+      query,
+      variables: {
+        message_id: messageId,
+        file: null,
+      },
+      files: [
+        {
+          key: "variables.file",
+          fileName,
+          contentType,
+          content: file,
+        },
+      ],
+    });
+  }
+
+  async attachFilesToMessage(messageId: string | number, files: LeadFilesUploadInput["files"]) {
+    return Promise.all(
+      files.map((file) =>
+        this.attachFileToMessage(messageId, file.content, file.fileName, file.contentType)
+      )
+    );
   }
 
   async listLeadStatuses(first = 50) {
