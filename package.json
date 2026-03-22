@@ -4,6 +4,9 @@
   "private": true,
   "description": "OpenClaw plugin scaffolding for Kanvas CRM, inventory, and orders operations.",
   "type": "module",
+  "openclaw": {
+    "extensions": ["./dist/index.js"]
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
