@@ -1,15 +1,26 @@
 {
-  "name": "kanvas-openclaw-plugin",
+  "name": "@bakaphp/kanvas-openclaw-plugin",
   "version": "0.1.0",
-  "private": true,
-  "description": "OpenClaw plugin for Kanvas CRM, inventory, and order management.",
+  "description": "Connects agents to Kanvas — your company's nervous system for CRM, inventory, orders, and messaging.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bakaphp/kanvas-openclaw-plugin"
+  },
+  "keywords": ["openclaw", "kanvas", "crm", "plugin", "ai-agent"],
   "type": "module",
   "openclaw": {
     "extensions": [
       "./dist/index.js"
     ]
   },
+  "files": [
+    "dist/",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
     "dev": "node --watch --loader ts-node/esm src/index.ts"
