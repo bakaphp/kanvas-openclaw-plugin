@@ -1,5 +1,5 @@
 {
-  "name": "@bakaphp/kanvas-openclaw-plugin",
+  "name": "@kanvas/openclaw-plugin",
   "version": "0.1.0",
   "description": "Connects agents to Kanvas — your company's nervous system for CRM, inventory, orders, and messaging.",
   "license": "MIT",
