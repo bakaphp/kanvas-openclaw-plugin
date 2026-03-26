@@ -1,4 +1,4 @@
-import { definePluginEntry } from "openclaw/plugin-sdk/plugin-entry";
+import { definePluginEntry } from "openclaw/plugin-sdk/core";
 import { Type } from "@sinclair/typebox";
 import { KanvasClient } from "./client/kanvas-client.js";
 import { CrmService } from "./domains/crm/index.js";
