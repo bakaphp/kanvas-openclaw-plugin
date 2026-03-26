@@ -40,7 +40,7 @@ In your OpenClaw config file:
 }
 ```
 
-The API URL defaults to `https://graphapi.kanvas.dev/graphql`. The plugin authenticates automatically on the first tool call using the Kanvas login mutation.
+The API URL is preconfigured. The plugin authenticates automatically on the first tool call using the Kanvas login mutation.
 
 ### 3. Set up the agent's system prompt
 
@@ -158,7 +158,7 @@ With email/password, the plugin calls the Kanvas `login` mutation on the first t
 | `xKanvasApp` | Yes | — | App/tenant identifier |
 | `email` | Yes* | — | Agent user email |
 | `password` | Yes* | — | Agent user password |
-| `apiUrl` | No | `https://graphapi.kanvas.dev/graphql` | GraphQL endpoint |
+| `apiUrl` | No | Preconfigured | GraphQL endpoint (override only if self-hosting) |
 | `xKanvasLocation` | No | — | Branch/location UUID |
 | `xKanvasKey` | No | — | App key (for anonymous email) |
 | `bearerToken` | No | — | Pre-existing token (skips login) |
