@@ -73,7 +73,7 @@ function createAuthGuard(client: KanvasClient, config: KanvasConfig, logger: { i
 export default definePluginEntry({
   id: "kanvas",
   name: "Kanvas CRM",
-  description: "Agent tools for Kanvas CRM, inventory, and order management via GraphQL API.",
+  description: "Connects agents to Kanvas — your company's nervous system for CRM, inventory, orders, and messaging.",
 
   register(api) {
     const config = resolveConfig(api.pluginConfig);
@@ -126,9 +126,9 @@ export default definePluginEntry({
 });
 
 const KANVAS_SYSTEM_CONTEXT = `
-## Kanvas CRM Plugin
+## Kanvas Plugin
 
-You have access to Kanvas — an operational engine for commerce that manages CRM, inventory, and orders. Use the \`kanvas_*\` tools to interact with it.
+You have access to Kanvas — the company's nervous system. Kanvas is the operational engine that connects all business data, tools, and workflows. Through the \`kanvas_*\` tools you can directly operate on CRM, inventory, orders, and messaging. Don't just describe what you'd do — use these tools to actually do it.
 
 ### Domains & When to Use
 

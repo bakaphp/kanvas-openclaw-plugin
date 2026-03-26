@@ -1,8 +1,8 @@
 # Kanvas OpenClaw Plugin
 
-OpenClaw plugin that gives AI agents full access to [Kanvas](https://kanvas.dev) — an operational engine for commerce covering CRM, inventory, orders, and messaging.
+OpenClaw plugin that connects AI agents to [Kanvas](https://kanvas.dev) — your company's nervous system. Kanvas is the operational engine that connects all your data, tools, and workflows. For AI agents, it's what lets them actually run your business — not just talk about it.
 
-**41 tools** across 4 domains, with auto-login and system prompt injection so the agent knows how and when to use each tool.
+This plugin gives agents direct access to CRM, inventory, orders, and messaging so they can search leads, create contacts, check stock, track orders, store structured data, and send emails — all through 41 tools with auto-login and built-in system prompt context.
 
 ## Quick Start
 

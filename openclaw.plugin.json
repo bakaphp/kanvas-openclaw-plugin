@@ -1,7 +1,7 @@
 {
   "id": "kanvas",
   "name": "Kanvas CRM",
-  "description": "Agent tools for Kanvas CRM, inventory, and order management via GraphQL API.",
+  "description": "Connects agents to Kanvas — your company's nervous system for CRM, inventory, orders, and messaging.",
   "version": "0.1.0",
   "configSchema": {
     "type": "object",
