@@ -1,0 +1,64 @@
+{
+  "id": "kanvas",
+  "name": "Kanvas CRM",
+  "description": "Agent tools for Kanvas CRM, inventory, and order management via GraphQL API.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "required": ["xKanvasApp", "email", "password"],
+    "additionalProperties": false,
+    "properties": {
+      "apiUrl": {
+        "type": "string",
+        "default": "https://graphapi.kanvas.dev/graphql",
+        "description": "Kanvas GraphQL API endpoint URL"
+      },
+      "xKanvasApp": {
+        "type": "string",
+        "description": "Kanvas application/tenant identifier"
+      },
+      "email": {
+        "type": "string",
+        "description": "Kanvas user email for agent authentication"
+      },
+      "password": {
+        "type": "string",
+        "description": "Kanvas user password for agent authentication"
+      },
+      "xKanvasLocation": {
+        "type": "string",
+        "description": "Optional branch/location UUID"
+      },
+      "authMode": {
+        "type": "string",
+        "enum": ["bearer", "app-key"],
+        "default": "bearer",
+        "description": "Authentication mode (auto-set when using email/password)"
+      },
+      "bearerToken": {
+        "type": "string",
+        "description": "Pre-existing bearer token (optional — use email/password instead)"
+      },
+      "xKanvasKey": {
+        "type": "string",
+        "description": "App key for app-scoped auth"
+      },
+      "timeoutMs": {
+        "type": "number",
+        "default": 15000,
+        "description": "Request timeout in milliseconds"
+      }
+    }
+  },
+  "uiHints": {
+    "apiUrl": { "label": "API URL", "placeholder": "https://graphapi.kanvas.dev/graphql" },
+    "xKanvasApp": { "label": "App ID", "placeholder": "your-app-key" },
+    "email": { "label": "Email", "placeholder": "agent@yourcompany.com" },
+    "password": { "label": "Password", "sensitive": true },
+    "xKanvasLocation": { "label": "Branch UUID", "advanced": true },
+    "authMode": { "label": "Auth Mode", "advanced": true },
+    "bearerToken": { "label": "Bearer Token", "sensitive": true, "advanced": true },
+    "xKanvasKey": { "label": "App Key", "sensitive": true, "advanced": true },
+    "timeoutMs": { "label": "Timeout (ms)", "advanced": true }
+  }
+}

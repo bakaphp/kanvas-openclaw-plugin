@@ -2,10 +2,12 @@
   "name": "kanvas-openclaw-plugin",
   "version": "0.1.0",
   "private": true,
-  "description": "OpenClaw plugin scaffolding for Kanvas CRM, inventory, and orders operations.",
+  "description": "OpenClaw plugin for Kanvas CRM, inventory, and order management.",
   "type": "module",
   "openclaw": {
-    "extensions": ["./dist/index.js"]
+    "extensions": [
+      "./dist/index.js"
+    ]
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -15,8 +17,15 @@
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.48"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.0.0"
+  },
   "devDependencies": {
     "@types/node": "^24.5.2",
+    "openclaw": "^2026.3.24",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }
