@@ -1,4 +1,3 @@
-import { definePluginEntry } from "openclaw/plugin-sdk/core";
 import { Type } from "@sinclair/typebox";
 import { KanvasClient } from "./client/kanvas-client.js";
 import { CrmService } from "./domains/crm/index.js";
@@ -70,12 +69,13 @@ function createAuthGuard(client: KanvasClient, config: KanvasConfig, logger: { i
   };
 }
 
-export default definePluginEntry({
+export default {
   id: "kanvas",
   name: "Kanvas CRM",
   description: "Connects agents to Kanvas — your company's nervous system for CRM, inventory, orders, and messaging.",
+  configSchema: { type: "object" as const },
 
-  register(api) {
+  register(api: any) {
     const config = resolveConfig(api.pluginConfig);
     const client = new KanvasClient(config);
     const ensureAuth = createAuthGuard(client, config, api.logger);
@@ -109,7 +109,7 @@ export default definePluginEntry({
 
     // Register `openclaw kanvas setup` CLI command for interactive configuration.
     api.registerCli(
-      (ctx) => {
+      (ctx: any) => {
         ctx.program
           .command("setup")
           .description("Interactive setup — configure Kanvas credentials and test the connection")
@@ -121,9 +121,9 @@ export default definePluginEntry({
       { commands: ["setup"] }
     );
 
-    api.logger.info("Kanvas plugin registered — 41 tools loaded");
+    api.logger.info("Kanvas plugin registered — 50 tools loaded");
   },
-});
+};
 
 const KANVAS_SYSTEM_CONTEXT = `
 ## Kanvas Plugin
@@ -143,6 +143,16 @@ Use when the user asks about leads, prospects, sales pipeline, contacts, or foll
 - \`kanvas_add_lead_participant\` / \`kanvas_remove_lead_participant\` → manage related people
 - \`kanvas_follow_lead\` / \`kanvas_unfollow_lead\` → subscribe to lead updates
 - \`kanvas_delete_lead\` / \`kanvas_restore_lead\` → soft-delete and restore
+- \`kanvas_attach_file_to_lead_by_url\` → attach a file to a lead from a public URL
+- \`kanvas_upload_file_to_lead\` → upload a file directly to a lead (base64-encoded content — for PDFs, images, generated docs)
+- \`kanvas_upload_file_to_message\` → upload a file to a message (base64-encoded)
+
+**People / Contacts**
+Use when the user asks about updating contact info, adding phone numbers or emails.
+- \`kanvas_search_people\` → search contacts by name, email, or phone
+- \`kanvas_update_people\` → update a person's name, phone, email, address, tags (call kanvas_list_contact_types first for contact type IDs)
+- \`kanvas_list_contact_types\` → get valid contact type IDs (email, phone, etc.)
+- \`kanvas_list_people_relationships\` → list relationship types for lead participants
 
 **CRM Support Data** — call these first when creating/updating leads to get valid IDs:
 - \`kanvas_list_pipelines\` → pipelines and their stages (needed for pipeline_stage_id)
@@ -186,6 +196,12 @@ Use when the user asks about orders, purchases, or sales.
 - \`kanvas_search_orders\` → find orders by number or keyword
 - \`kanvas_get_order\` → full order detail with items, customer, status
 
+**Follow-ups & Reminders**
+ALWAYS schedule follow-ups in Kanvas so the human team can see them — NEVER store them only in local memory.
+- \`kanvas_create_follow_up\` → create a calendar event for a future action (e.g. "Call Jane re: proposal"). Optionally link to a lead. Requires: name, date, start_time, end_time.
+- \`kanvas_list_events\` → list scheduled events/follow-ups
+- For structured follow-up data (tracking status, priority, custom fields), use \`kanvas_create_message\` with verb "follow_up" and a JSON payload containing { due_date, lead_id, action, status, priority }.
+
 **Diagnostics**
 - \`kanvas_test_connection\` → verify the API is reachable
 
@@ -195,5 +211,8 @@ Use when the user asks about orders, purchases, or sales.
 - Messages use \`message_verb\` to define their type (e.g. "comment", "note", "sms"). New verbs are auto-created.
 - The \`message\` field in social messages accepts arbitrary JSON — use it to store any structured data.
 - Filtering uses \`where: [{ column, operator, value }]\` format. Common operators: "EQ", "LIKE", "IN".
+- **Follow-ups and reminders MUST go in Kanvas** (events or messages), not local memory. The human team needs to see them in the dashboard.
+- When updating a lead, you don't need to provide branch_id or people_id — they are auto-fetched.
+- To add contacts to a person, call \`kanvas_list_contact_types\` first, then pass the contacts array to \`kanvas_update_people\`.
 `.trim();
 

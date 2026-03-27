@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { KanvasClient } from "../../client/kanvas-client.js";
 import { postGraphQLMultipart } from "../../client/multipart.js";
 import {
@@ -13,6 +14,29 @@ import {
   LeadParticipantInput,
   UpdateLeadInput,
 } from "./types.js";
+
+const CONTENT_TYPES: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".svg": "image/svg+xml",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".csv": "text/csv",
+  ".txt": "text/plain",
+  ".zip": "application/zip",
+  ".html": "text/html",
+};
+
+function guessContentType(fileName: string): string {
+  const ext = fileName.slice(fileName.lastIndexOf(".")).toLowerCase();
+  return CONTENT_TYPES[ext] ?? "application/octet-stream";
+}
 
 interface LeadChannelsResponse {
   leads?: {
@@ -206,6 +230,16 @@ export class CrmService {
   }
 
   async updateLead(id: string, input: UpdateLeadInput) {
+    // Auto-fetch branch_id and people_id if not provided (the API requires them)
+    if (!input.branch_id || !input.people_id) {
+      const current = await this.getLeadCore(id);
+      const lead = (current as any).data?.leads?.data?.[0];
+      if (lead) {
+        if (!input.branch_id) input.branch_id = lead.branch?.id;
+        if (!input.people_id) input.people_id = lead.people?.id;
+      }
+    }
+
     const mutation = `
       mutation UpdateLead($id: ID!, $input: LeadUpdateInput!) {
         updateLead(id: $id, input: $input) {
@@ -224,6 +258,25 @@ export class CrmService {
     `;
 
     return this.client.query(mutation, { id, input });
+  }
+
+  /** Lightweight lead fetch for getting required fields (branch_id, people_id). */
+  private async getLeadCore(id: string) {
+    const query = `
+      query GetLeadCore($first: Int!, $where: QueryLeadsWhereWhereConditions) {
+        leads(first: $first, where: $where) {
+          data {
+            id
+            branch { id }
+            people { id }
+          }
+        }
+      }
+    `;
+    return this.client.query(query, {
+      first: 1,
+      where: [{ column: "ID", operator: "EQ", value: id }],
+    });
   }
 
   async changeLeadOwner(input: LeadOwnerOrReceiverChangeInput) {
@@ -684,5 +737,308 @@ export class CrmService {
     `;
 
     return this.client.query(query, { first });
+  }
+
+  async attachFileToLeadByUrl(leadId: string, fileUrl: string, fileName: string) {
+    const mutation = `
+      mutation CreateFilesystem($input: FilesystemInputUrl!) {
+        createFileSystem(input: $input) {
+          id
+          uuid
+          name
+          url
+          type
+        }
+      }
+    `;
+
+    const fileResult = await this.client.query(mutation, {
+      input: { url: fileUrl, name: fileName },
+    });
+
+    const fileUuid = (fileResult as any).data?.createFileSystem?.uuid;
+    if (!fileUuid) {
+      return fileResult; // return the error
+    }
+
+    // Now attach via updateLead with files
+    return this.updateLead(leadId, {
+      files: [{ url: fileUrl, name: fileName }],
+    });
+  }
+
+  /**
+   * Resolve file content from base64, file path, or URL.
+   */
+  private async resolveFileContent(source: {
+    base64?: string;
+    filePath?: string;
+    url?: string;
+  }): Promise<Buffer> {
+    if (source.base64) {
+      return Buffer.from(source.base64, "base64");
+    }
+    if (source.filePath) {
+      return readFile(source.filePath);
+    }
+    if (source.url) {
+      const response = await fetch(source.url);
+      if (!response.ok) {
+        throw new Error(`Failed to download file from ${source.url}: ${response.status}`);
+      }
+      return Buffer.from(await response.arrayBuffer());
+    }
+    throw new Error("One of base64, filePath, or url must be provided");
+  }
+
+  async uploadFileToLead(
+    leadId: string,
+    fileName: string,
+    source: { base64?: string; filePath?: string; url?: string },
+    contentType?: string
+  ) {
+    const buffer = await this.resolveFileContent(source);
+
+    return postGraphQLMultipart({
+      config: this.client.getConfig(),
+      query: `
+        mutation AttachFileToLead($id: ID!, $file: Upload!) {
+          attachFileToLead(id: $id, file: $file) {
+            id
+            uuid
+            title
+            files {
+              data {
+                id
+                uuid
+                name
+                url
+                type
+              }
+            }
+          }
+        }
+      `,
+      variables: { id: leadId, file: null },
+      files: [{
+        key: "variables.file",
+        fileName,
+        contentType: contentType ?? guessContentType(fileName),
+        content: buffer,
+      }],
+    });
+  }
+
+  async uploadFileToMessage(
+    messageId: string,
+    fileName: string,
+    source: { base64?: string; filePath?: string; url?: string },
+    contentType?: string
+  ) {
+    const buffer = await this.resolveFileContent(source);
+
+    return postGraphQLMultipart({
+      config: this.client.getConfig(),
+      query: `
+        mutation AttachFileToMessage($message_id: ID!, $file: Upload!) {
+          attachFileToMessage(message_id: $message_id, file: $file) {
+            id
+            uuid
+            message
+            files {
+              data {
+                id
+                uuid
+                name
+                url
+                type
+              }
+            }
+          }
+        }
+      `,
+      variables: { message_id: messageId, file: null },
+      files: [{
+        key: "variables.file",
+        fileName,
+        contentType: contentType ?? guessContentType(fileName),
+        content: buffer,
+      }],
+    });
+  }
+
+  async updatePeople(id: string, input: Record<string, unknown>) {
+    const mutation = `
+      mutation UpdatePeople($id: ID!, $input: PeopleInput!) {
+        updatePeople(id: $id, input: $input) {
+          id
+          uuid
+          firstname
+          middlename
+          lastname
+          dob
+          contacts {
+            id
+            value
+            type { id name }
+          }
+          address {
+            id
+            address
+            city
+            state
+            zip
+            country
+          }
+          organizations { name }
+          custom_fields { name value }
+          tags { id name }
+          updated_at
+        }
+      }
+    `;
+
+    return this.client.query(mutation, { id, input });
+  }
+
+  async searchPeople(search: string, first = 10) {
+    const query = `
+      query SearchPeople($first: Int, $search: String) {
+        peoples(first: $first, search: $search) {
+          data {
+            id
+            uuid
+            firstname
+            lastname
+            contacts {
+              id
+              value
+              type { id name }
+            }
+            organizations { name }
+            created_at
+          }
+        }
+      }
+    `;
+
+    return this.client.query(query, { first, search });
+  }
+
+  async listPeopleRelationships(first = 50) {
+    const query = `
+      query PeopleRelationships($first: Int) {
+        peopleRelationships(first: $first) {
+          data {
+            id
+            name
+            description
+          }
+        }
+      }
+    `;
+
+    return this.client.query(query, { first });
+  }
+
+  async listContactTypes(first = 50) {
+    const query = `
+      query ContactTypes($first: Int) {
+        contactTypes(first: $first) {
+          data {
+            id
+            name
+          }
+        }
+      }
+    `;
+
+    return this.client.query(query, { first });
+  }
+
+  async createFollowUpEvent(input: {
+    name: string;
+    description?: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    lead_id?: string | number;
+  }) {
+    const mutation = `
+      mutation CreateEvent($input: EventInput!) {
+        createEvent(input: $input) {
+          id
+          uuid
+          name
+          description
+          created_at
+          versions {
+            data {
+              id
+              start_at
+              end_at
+              dates {
+                id
+                date
+                start_time
+                end_time
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const eventInput: Record<string, unknown> = {
+      name: input.name,
+      description: input.description,
+      dates: [{
+        date: input.date,
+        start_time: input.start_time,
+        end_time: input.end_time,
+      }],
+    };
+
+    if (input.lead_id) {
+      eventInput.resources = [{
+        resources_id: String(input.lead_id),
+        resources_type: "lead",
+      }];
+    }
+
+    return this.client.query(mutation, { input: eventInput });
+  }
+
+  async listEvents(first = 25, where?: Array<Record<string, unknown>>) {
+    const query = `
+      query Events($first: Int, $where: QueryEventsWhereWhereConditions) {
+        events(first: $first, where: $where, orderBy: [{ column: CREATED_AT, order: DESC }]) {
+          data {
+            id
+            uuid
+            name
+            description
+            created_at
+            type { name }
+            eventStatus { name }
+            versions {
+              data {
+                id
+                start_at
+                end_at
+                dates {
+                  id
+                  date
+                  start_time
+                  end_time
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    return this.client.query(query, { first, where });
   }
 }

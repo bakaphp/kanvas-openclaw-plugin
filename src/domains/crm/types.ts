@@ -32,8 +32,8 @@ export interface CreateLeadInput {
 }
 
 export interface UpdateLeadInput {
-  branch_id: string | number;
-  people_id: string | number;
+  branch_id?: string | number;
+  people_id?: string | number;
   title?: string;
   leads_owner_id?: string | number;
   organization_id?: string | number;
