@@ -1,6 +1,6 @@
 {
   "name": "@kanvas/openclaw-plugin",
-  "version": "0.1.6",
+  "version": "0.1.5",
   "description": "Connects agents to Kanvas — your company's nervous system for CRM, inventory, orders, and messaging.",
   "license": "MIT",
   "repository": {
