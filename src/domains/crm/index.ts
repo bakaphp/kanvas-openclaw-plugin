@@ -232,11 +232,22 @@ export class CrmService {
   async updateLead(id: string, input: UpdateLeadInput) {
     // Auto-fetch branch_id and people_id if not provided (the API requires them)
     if (!input.branch_id || !input.people_id) {
-      const current = await this.getLeadCore(id);
+      const current = await this.getLead(id);
       const lead = (current as any).data?.leads?.data?.[0];
-      if (lead) {
-        if (!input.branch_id) input.branch_id = lead.branch?.id;
-        if (!input.people_id) input.people_id = lead.people?.id;
+      if (!lead) {
+        throw new Error(`Lead ${id} not found — cannot auto-fetch required fields`);
+      }
+      if (!input.branch_id) {
+        input.branch_id = lead.branch?.id;
+        if (!input.branch_id) {
+          throw new Error(`Lead ${id} has no branch_id — provide it explicitly`);
+        }
+      }
+      if (!input.people_id) {
+        input.people_id = lead.people?.id;
+        if (!input.people_id) {
+          throw new Error(`Lead ${id} has no people_id — provide it explicitly`);
+        }
       }
     }
 
@@ -258,25 +269,6 @@ export class CrmService {
     `;
 
     return this.client.query(mutation, { id, input });
-  }
-
-  /** Lightweight lead fetch for getting required fields (branch_id, people_id). */
-  private async getLeadCore(id: string) {
-    const query = `
-      query GetLeadCore($first: Int!, $where: QueryLeadsWhereWhereConditions) {
-        leads(first: $first, where: $where) {
-          data {
-            id
-            branch { id }
-            people { id }
-          }
-        }
-      }
-    `;
-    return this.client.query(query, {
-      first: 1,
-      where: [{ column: "ID", operator: "EQ", value: id }],
-    });
   }
 
   async changeLeadOwner(input: LeadOwnerOrReceiverChangeInput) {
@@ -888,11 +880,20 @@ export class CrmService {
             city
             state
             zip
-            country
           }
           organizations { name }
-          custom_fields { name value }
-          tags { id name }
+          custom_fields(first: 50) {
+            data {
+              name
+              value
+            }
+          }
+          tags(first: 50) {
+            data {
+              id
+              name
+            }
+          }
           updated_at
         }
       }
