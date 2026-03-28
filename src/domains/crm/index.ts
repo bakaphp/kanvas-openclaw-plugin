@@ -197,7 +197,7 @@ export class CrmService {
 
     return this.client.query(query, {
       first: 1,
-      where: [{ column: "ID", operator: "EQ", value: id }],
+      where: { column: "ID", operator: "EQ", value: id },
     });
   }
 
@@ -537,7 +537,7 @@ export class CrmService {
       `,
       {
         first: 1,
-        where: [{ column: "ID", operator: "EQ", value: leadId }],
+        where: { column: "ID", operator: "EQ", value: leadId },
       }
     );
 

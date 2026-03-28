@@ -210,7 +210,7 @@ ALWAYS schedule follow-ups in Kanvas so the human team can see them — NEVER st
 - Leads live in pipelines with stages. Always check \`kanvas_list_pipelines\` to get valid stage IDs before creating leads.
 - Messages use \`message_verb\` to define their type (e.g. "comment", "note", "sms"). New verbs are auto-created.
 - The \`message\` field in social messages accepts arbitrary JSON — use it to store any structured data.
-- Filtering uses \`where: [{ column, operator, value }]\` format. Common operators: "EQ", "LIKE", "IN".
+- Filtering uses \`where: { column, operator, value }\` format. Common operators: "EQ", "LIKE", "IN".
 - **Follow-ups and reminders MUST go in Kanvas** (events or messages), not local memory. The human team needs to see them in the dashboard.
 - When updating a lead, you don't need to provide branch_id or people_id — they are auto-fetched.
 - To add contacts to a person, call \`kanvas_list_contact_types\` first, then pass the contacts array to \`kanvas_update_people\`.

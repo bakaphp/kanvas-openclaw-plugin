@@ -54,7 +54,7 @@ export class OrdersService {
 
     return this.client.query(query, {
       first: 1,
-      where: [{ column: "ID", operator: "EQ", value: id }],
+      where: { column: "ID", operator: "EQ", value: id },
     });
   }
 }
