@@ -942,6 +942,41 @@ export class CrmService {
     return this.client.query(query, { first });
   }
 
+  async createPeopleRelationship(input: { name: string; description?: string }) {
+    const mutation = `
+      mutation CreatePeopleRelationship($input: PeopleRelationshipInput!) {
+        createPeopleRelationship(input: $input) {
+          id
+          name
+          description
+        }
+      }
+    `;
+    return this.client.query(mutation, { input });
+  }
+
+  async updatePeopleRelationship(id: string, input: { name?: string; description?: string }) {
+    const mutation = `
+      mutation UpdatePeopleRelationship($id: ID!, $input: UpdatePeopleRelationshipInput!) {
+        updatePeopleRelationship(id: $id, input: $input) {
+          id
+          name
+          description
+        }
+      }
+    `;
+    return this.client.query(mutation, { id, input });
+  }
+
+  async deletePeopleRelationship(id: string) {
+    const mutation = `
+      mutation DeletePeopleRelationship($id: ID!) {
+        deletePeopleRelationship(id: $id)
+      }
+    `;
+    return this.client.query(mutation, { id });
+  }
+
   async listContactTypes(first = 50) {
     const query = `
       query ContactTypes($first: Int) {

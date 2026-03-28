@@ -121,7 +121,7 @@ export default {
       { commands: ["setup"] }
     );
 
-    api.logger.info("Kanvas plugin registered — 50 tools loaded");
+    api.logger.info("Kanvas plugin registered — 53 tools loaded");
   },
 };
 

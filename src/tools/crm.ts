@@ -484,6 +484,49 @@ export function registerCrmTools(api: OpenClawPluginApi, service: CrmService, en
   });
 
   api.registerTool({
+    name: "kanvas_create_people_relationship",
+    label: "Create People Relationship",
+    description: "Create a new relationship type (e.g. Architect, Client, Consultant) for use when adding participants to leads.",
+    parameters: Type.Object({
+      name: Type.String({ description: 'Relationship name (e.g. "Architect", "Consultant", "Decision Maker")' }),
+      description: Type.Optional(Type.String({ description: "Description of this relationship type" })),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      return toolResult(await service.createPeopleRelationship(params));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_update_people_relationship",
+    label: "Update People Relationship",
+    description: "Update a relationship type's name or description.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Relationship ID" }),
+      name: Type.Optional(Type.String()),
+      description: Type.Optional(Type.String()),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      const { id, ...input } = params;
+      return toolResult(await service.updatePeopleRelationship(id, input));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_delete_people_relationship",
+    label: "Delete People Relationship",
+    description: "Delete a relationship type.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Relationship ID" }),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      return toolResult(await service.deletePeopleRelationship(params.id));
+    },
+  });
+
+  api.registerTool({
     name: "kanvas_list_contact_types",
     label: "List Contact Types",
     description: "List available contact types (email, phone, etc.) needed for adding contacts to people.",
