@@ -438,14 +438,15 @@ export class CrmService {
   }
 
   async addLeadMessageByLeadId(input: AddLeadMessageByIdInput) {
-    const channelSlug = await this.getLeadPrimaryChannelSlug(String(input.leadId));
+    // The channel_slug for lead notes must be the lead's UUID
+    const leadUuid = await this.getLeadUuid(String(input.leadId));
 
-    if (!channelSlug) {
-      throw new Error(`No lead channel found for lead ${input.leadId}`);
+    if (!leadUuid) {
+      throw new Error(`Lead ${input.leadId} not found`);
     }
 
     const created = await this.addLeadMessage({
-      channel_slug: channelSlug,
+      channel_slug: leadUuid,
       message: input.message,
       parent_id: input.parent_id,
       is_public: input.is_public,
@@ -518,6 +519,26 @@ export class CrmService {
     `;
 
     return this.client.query(query, { first, page, channelSlug });
+  }
+
+  async getLeadUuid(leadId: string): Promise<string | null> {
+    const response = await this.client.query<LeadChannelsResponse>(
+      `
+        query LeadUuid($first: Int!, $where: QueryLeadsWhereWhereConditions) {
+          leads(first: $first, where: $where) {
+            data {
+              uuid
+            }
+          }
+        }
+      `,
+      {
+        first: 1,
+        where: { column: "ID", operator: "EQ", value: leadId },
+      }
+    );
+
+    return (response.data?.leads?.data?.[0] as any)?.uuid ?? null;
   }
 
   async getLeadPrimaryChannelSlug(leadId: string) {
