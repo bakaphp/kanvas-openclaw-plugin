@@ -23,6 +23,8 @@
   },
   "files": [
     "dist/",
+    "skills/",
+    "agent-setup/",
     "openclaw.plugin.json",
     "README.md"
   ],

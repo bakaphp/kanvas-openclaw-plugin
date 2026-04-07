@@ -50,6 +50,7 @@
       }
     }
   },
+  "skills": ["skills"],
   "uiHints": {
     "apiUrl": { "label": "API URL", "placeholder": "https://graphapi.kanvas.dev/graphql" },
     "xKanvasApp": { "label": "App ID", "placeholder": "your-app-key" },

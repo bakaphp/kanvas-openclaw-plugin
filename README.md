@@ -2,21 +2,23 @@
 
 OpenClaw plugin that connects AI agents to [Kanvas](https://kanvas.dev) — your company's nervous system. Kanvas is the operational engine that connects all your data, tools, and workflows. For AI agents, it's what lets them actually run your business — not just talk about it.
 
-This plugin gives agents direct access to CRM, inventory, orders, and messaging so they can search leads, create contacts, check stock, track orders, store structured data, and send emails — all through 41 tools with auto-login and built-in system prompt context.
+This plugin gives agents direct access to CRM, inventory, orders, and messaging — 53 tools with auto-login, built-in system prompt context, and domain-specific skills.
 
 ## Quick Start
 
 ### 1. Install the plugin
 
 ```bash
-# From local directory (development)
-openclaw plugins install /path/to/kanvas-openclaw-plugin --link
-
-# From npm (once published)
-openclaw plugins install kanvas-openclaw-plugin
+openclaw plugins install @kanvas/openclaw-plugin
 ```
 
-### 2. Configure credentials
+### 2. Update to latest version
+
+```bash
+openclaw plugins update kanvas
+```
+
+### 3. Configure credentials
 
 In your OpenClaw config file:
 
@@ -42,43 +44,71 @@ In your OpenClaw config file:
 
 The API URL is preconfigured. The plugin authenticates automatically on the first tool call using the Kanvas login mutation.
 
-### 3. Set up the agent's system prompt
+## Skills
 
-The plugin injects tool documentation into the agent's context automatically. But the agent's **base system prompt** (configured in OpenClaw) should tell it to use Kanvas. Here's a sample:
+The plugin ships with domain-specific **skills** — operational playbooks that teach the agent best practices for each use case. Skills are auto-loaded when the kanvas plugin is configured.
+
+### Included Skills
+
+| Skill | Description |
+|-------|-------------|
+| `kanvas-crm` | CRM operations — lead management, pipelines, email templates, follow-ups, file attachments, contact updates, participant relationships, email logging, and context isolation rules |
+
+Skills live in `skills/<skill-name>/SKILL.md` and follow the [OpenClaw skills format](https://docs.openclaw.ai/tools/skills). They inject operational guidance into the agent's context automatically.
+
+## Agent Setup Guides
+
+The `agent-setup/` directory contains step-by-step runbooks for deploying specific agent types. These are **human-facing documentation** — not auto-loaded by the agent.
+
+| Guide | Description |
+|-------|-------------|
+| [Sales Agent](agent-setup/sales.md) | Full setup protocol for an autonomous sales/deal architect agent — persona config, CRM customization, pipeline stages, daily heartbeat, email integration, and anti-pollution rules |
+
+### Agent types you can build with this plugin
+
+**Sales / Deal Architect**
+Autonomous lead generation, cold outreach, pipeline management, follow-up scheduling, and daily reporting. See [agent-setup/sales.md](agent-setup/sales.md) for the full setup protocol.
+
+**Operations Agent**
+Inventory monitoring, order tracking, stock alerts, and cross-domain reporting.
+
+**Customer Success Agent**
+Post-sale follow-ups, onboarding workflows, satisfaction tracking via CRM notes and events.
+
+**Data Entry / Admin Agent**
+Bulk lead import, contact enrichment, file attachments, and CRM hygiene.
+
+Each agent type uses the same plugin and tools — the difference is the system prompt, skills, and heartbeat configuration.
+
+### Setting up the agent's system prompt
+
+The plugin injects tool documentation automatically. But the agent's **base system prompt** (configured in OpenClaw) should define its role. Example for a sales agent:
 
 ```
 You are a sales and operations agent for [Company Name]. You manage leads,
-inventory, and orders using Kanvas.
+inventory, and orders using the CRM.
 
 Your responsibilities:
 - Register and manage leads in the CRM pipeline
-- Look up products, stock levels, and pricing
-- Check and track orders
-- Add notes and messages to leads
-- Send emails to customers and prospects
+- Send outreach emails and follow up with prospects
+- Log all activity as CRM notes and messages
+- Schedule follow-ups as calendar events (never in local memory)
+- Send daily pipeline summaries to the team
 
 When users ask you to do any of these things, use the kanvas_* tools to act
 on it directly. Don't just describe what you would do — actually do it.
-
-Before creating a lead, always check kanvas_list_pipelines to get valid
-pipeline stage IDs, and kanvas_list_lead_sources for source IDs.
-
-When you don't have enough information to complete an action (e.g. missing
-a required field), ask the user for the missing details before proceeding.
 ```
-
-Customize this for your business — add your company name, specific workflows, and any domain-specific instructions.
 
 ## Tools Reference
 
-### CRM (22 tools)
+### CRM (29 tools)
 
 | Tool | Description |
 |------|-------------|
 | `kanvas_search_leads` | Search leads by keyword |
 | `kanvas_get_lead` | Full lead detail (pipeline, owner, participants, files, events) |
 | `kanvas_create_lead` | Create a new lead |
-| `kanvas_update_lead` | Update lead fields |
+| `kanvas_update_lead` | Update lead fields (auto-fetches branch_id/people_id) |
 | `kanvas_change_lead_owner` | Reassign lead owner |
 | `kanvas_change_lead_receiver` | Reassign lead receiver |
 | `kanvas_add_lead_participant` | Add a person to a lead |
@@ -93,6 +123,18 @@ Customize this for your business — add your company name, specific workflows, 
 | `kanvas_add_lead_note_by_lead_id` | Add note by lead ID (auto-resolves channel) |
 | `kanvas_list_lead_messages` | List messages in a lead channel |
 | `kanvas_get_lead_primary_channel_slug` | Get the main channel slug for a lead |
+| `kanvas_attach_file_to_lead_by_url` | Attach file from a public URL |
+| `kanvas_upload_file_to_lead` | Upload file (base64, file path, or URL) |
+| `kanvas_upload_file_to_message` | Upload file to a message |
+| `kanvas_search_people` | Search contacts by name, email, or phone |
+| `kanvas_update_people` | Update contact info (phone, email, address, tags) |
+| `kanvas_list_contact_types` | List contact types (email, phone, etc.) |
+| `kanvas_list_people_relationships` | List relationship types |
+| `kanvas_create_people_relationship` | Create a relationship type |
+| `kanvas_update_people_relationship` | Update a relationship type |
+| `kanvas_delete_people_relationship` | Delete a relationship type |
+| `kanvas_create_follow_up` | Schedule a follow-up event linked to a lead |
+| `kanvas_list_events` | List scheduled events/follow-ups |
 | `kanvas_list_pipelines` | List pipelines and stages |
 | `kanvas_list_lead_statuses` | List lead statuses |
 | `kanvas_list_lead_sources` | List lead sources |
@@ -190,4 +232,4 @@ KANVAS_PASSWORD=yourpassword \
 
 ## License
 
-Private — see package.json.
+MIT
