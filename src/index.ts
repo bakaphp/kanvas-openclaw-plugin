@@ -76,7 +76,32 @@ export default {
   configSchema: { type: "object" as const },
 
   register(api: any) {
-    const config = resolveConfig(api.pluginConfig);
+    // Guard: resolve config and log a warning instead of throwing if
+    // credentials are missing. This prevents the gateway from entering
+    // an infinite retry loop when the plugin is installed but not yet
+    // configured, or when the gateway re-invokes register() multiple times.
+    let config: KanvasConfig;
+    try {
+      config = resolveConfig(api.pluginConfig);
+    } catch (err: any) {
+      api.logger.info(`Kanvas plugin skipped: ${err.message}. Run "openclaw kanvas setup" to configure.`);
+
+      // Still register the CLI so the user can run setup even without config
+      api.registerCli(
+        (ctx: any) => {
+          ctx.program
+            .command("setup")
+            .description("Interactive setup — configure Kanvas credentials and test the connection")
+            .action(async () => {
+              const { runSetup } = await import("./cli/setup.js");
+              await runSetup();
+            });
+        },
+        { commands: ["setup"] }
+      );
+      return;
+    }
+
     const client = new KanvasClient(config);
     const ensureAuth = createAuthGuard(client, config, api.logger);
 
