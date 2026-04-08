@@ -89,20 +89,32 @@ export default {
   configSchema: { type: "object" as const },
 
   register(api: any) {
-    // Resolve config — log once and bail silently on missing credentials.
-    let config: KanvasConfig;
+    // Resolve plugin config.  api.pluginConfig is set on the gateway init
+    // context but often undefined on agent contexts (Slack, subagents, cron).
+    // Fall back to extracting from the full app config (api.config), which
+    // is always available — matching the pattern used by budget-guard and
+    // lossless-claw.
+    const pluginCfg = api.pluginConfig
+      ?? (api.config?.plugins?.entries?.kanvas?.config as Record<string, unknown> | undefined)
+      ?? {};
+
+    let config: KanvasConfig | null = null;
     try {
-      config = resolveConfig(api.pluginConfig);
+      config = resolveConfig(pluginCfg);
     } catch (err: any) {
-      if (!skipBannerShown) {
-        api.logger.info(`Kanvas plugin skipped: ${err.message}. Run "openclaw kanvas setup" to configure.`);
-        skipBannerShown = true;
+      // If shared state exists from a prior init, fall through to register
+      // tools.  Otherwise this is genuinely unconfigured — bail.
+      if (!sharedClient) {
+        if (!skipBannerShown) {
+          api.logger.info(`Kanvas plugin skipped: ${err.message}. Run "openclaw kanvas setup" to configure.`);
+          skipBannerShown = true;
+        }
+        return;
       }
-      return;
     }
 
     // Create heavy objects once; reuse across agent contexts.
-    if (!sharedClient) {
+    if (!sharedClient && config) {
       sharedConfig = config;
       sharedClient = new KanvasClient(config);
       sharedEnsureAuth = createAuthGuard(sharedClient, config, api.logger);
