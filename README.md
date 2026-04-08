@@ -230,6 +230,21 @@ KANVAS_PASSWORD=yourpassword \
   npx ts-node --esm scripts/smoke-test.ts
 ```
 
+## Releasing
+
+```bash
+npm version patch   # bumps 0.1.x → 0.1.x+1 and creates a git commit + tag
+git push && git push --tags
+```
+
+GitHub Actions builds and publishes to npm automatically on any `v*` tag.
+
+Then on the agent machine:
+
+```bash
+openclaw plugins update kanvas
+```
+
 ## License
 
 MIT
