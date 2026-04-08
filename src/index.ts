@@ -13,6 +13,19 @@ import type { KanvasConfig } from "./config/types.js";
 
 const DEFAULT_API_URL = "https://graphapi.kanvas.dev/graphql";
 
+// OpenClaw v2026.4.5+ calls register() per-agent-context (main, subagents,
+// cron lanes).  Heavy objects (client, services) are created once and shared;
+// tools & hooks must be registered on every api object.
+let sharedClient: KanvasClient | null = null;
+let sharedConfig: KanvasConfig | null = null;
+let sharedEnsureAuth: (() => Promise<void>) | null = null;
+let sharedCrm: CrmService | null = null;
+let sharedInventory: InventoryService | null = null;
+let sharedOrders: OrdersService | null = null;
+let sharedSocial: SocialService | null = null;
+let startupBannerShown = false;
+let skipBannerShown = false;
+
 function resolveConfig(pluginConfig?: Record<string, unknown>): KanvasConfig {
   const cfg = pluginConfig ?? {};
   const apiUrl = (cfg.apiUrl as string) || process.env.KANVAS_API_URL || DEFAULT_API_URL;
@@ -76,44 +89,37 @@ export default {
   configSchema: { type: "object" as const },
 
   register(api: any) {
-    // Guard: resolve config and log a warning instead of throwing if
-    // credentials are missing. This prevents the gateway from entering
-    // an infinite retry loop when the plugin is installed but not yet
-    // configured, or when the gateway re-invokes register() multiple times.
+    // Resolve config — log once and bail silently on missing credentials.
     let config: KanvasConfig;
     try {
       config = resolveConfig(api.pluginConfig);
     } catch (err: any) {
-      api.logger.info(`Kanvas plugin skipped: ${err.message}. Run "openclaw kanvas setup" to configure.`);
-
-      // Still register the CLI so the user can run setup even without config
-      api.registerCli(
-        (ctx: any) => {
-          ctx.program
-            .command("setup")
-            .description("Interactive setup — configure Kanvas credentials and test the connection")
-            .action(async () => {
-              const { runSetup } = await import("./cli/setup.js");
-              await runSetup();
-            });
-        },
-        { commands: ["setup"] }
-      );
+      if (!skipBannerShown) {
+        api.logger.info(`Kanvas plugin skipped: ${err.message}. Run "openclaw kanvas setup" to configure.`);
+        skipBannerShown = true;
+      }
       return;
     }
 
-    const client = new KanvasClient(config);
-    const ensureAuth = createAuthGuard(client, config, api.logger);
+    // Create heavy objects once; reuse across agent contexts.
+    if (!sharedClient) {
+      sharedConfig = config;
+      sharedClient = new KanvasClient(config);
+      sharedEnsureAuth = createAuthGuard(sharedClient, config, api.logger);
+      sharedCrm = new CrmService(sharedClient);
+      sharedInventory = new InventoryService(sharedClient);
+      sharedOrders = new OrdersService(sharedClient);
+      sharedSocial = new SocialService(sharedClient);
+    }
 
-    const crm = new CrmService(client);
-    const inventory = new InventoryService(client);
-    const orders = new OrdersService(client);
-    const social = new SocialService(client);
+    // Tools and hooks must be registered on every api object — each one is
+    // a separate agent context (main, subagents, cron lanes).
+    const ensureAuth = sharedEnsureAuth!;
 
-    registerCrmTools(api, crm, ensureAuth);
-    registerInventoryTools(api, inventory, ensureAuth);
-    registerOrdersTools(api, orders, ensureAuth);
-    registerSocialTools(api, social, ensureAuth);
+    registerCrmTools(api, sharedCrm!, ensureAuth);
+    registerInventoryTools(api, sharedInventory!, ensureAuth);
+    registerOrdersTools(api, sharedOrders!, ensureAuth);
+    registerSocialTools(api, sharedSocial!, ensureAuth);
 
     api.registerTool({
       name: "kanvas_test_connection",
@@ -122,17 +128,14 @@ export default {
       parameters: Type.Object({}),
       async execute() {
         await ensureAuth();
-        return toolResult(await client.testConnection());
+        return toolResult(await sharedClient!.testConnection());
       },
     });
 
-    // Inject Kanvas context into the agent's system prompt so it knows
-    // what these tools are for and how to use them together.
     api.on("before_prompt_build", () => ({
       appendSystemContext: KANVAS_SYSTEM_CONTEXT,
     }));
 
-    // Register `openclaw kanvas setup` CLI command for interactive configuration.
     api.registerCli(
       (ctx: any) => {
         ctx.program
@@ -146,7 +149,10 @@ export default {
       { commands: ["setup"] }
     );
 
-    api.logger.info("Kanvas plugin registered — 53 tools loaded");
+    if (!startupBannerShown) {
+      startupBannerShown = true;
+      api.logger.info("Kanvas plugin registered — 53 tools loaded");
+    }
   },
 };
 
