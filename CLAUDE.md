@@ -23,6 +23,8 @@ This plugin currently covers four domains: CRM (leads, pipelines, messages, file
 npm run build     # Compile TypeScript to dist/
 npm run check     # Type-check without emitting
 npm run dev       # Watch mode (ts-node --watch)
+npm test          # Run integration tests (requires .env.test)
+npm run test:watch # Run tests in watch mode
 ```
 
 ## Project Structure
@@ -76,6 +78,9 @@ This is a **tool plugin** using the OpenClaw SDK pattern:
 - **Per-request overrides**: any service call can override auth/location via `RequestContextOverride`
 - **Filtering**: standard `where: Array<{ column, operator, value }>` across list operations
 - **Pagination**: consistent `first`/`page` parameters on all list queries
+- **Paginator fields in GraphQL**: Relations that return paginators (`tags`, `custom_fields`, `files`, `children`) **must** use `{ data { ... } }` wrapper — e.g. `tags { data { id name } }`, NOT `tags { id name }`. Querying scalar fields directly on a `*Paginator` type causes `Cannot query field "X" on type "XPaginator"` errors.
+- **`Mixed` type for filter values**: When using `hasChannel`, `hasType`, or similar filter arguments, the `value` field expects GraphQL `Mixed` type, NOT `String`. Declare variables as `$var: Mixed!`.
+- **`Message` type has no `updated_at` field** — only `created_at` is available on the dev API.
 
 ## Configuration
 
@@ -151,7 +156,39 @@ createMessageType(input: CreateMessageTypeInput!): MessageType  # admin only
 - Orders domain: read-only (2 tools — search, get)
 - Connection test tool (1 tool)
 - **Total: 41 tools**
-- No test infrastructure yet
+
+## Testing
+
+Integration tests run against the **dev** Kanvas API (`graphapidev.kanvas.dev`), using `vitest`.
+
+### Setup
+- Copy `.env.test.example` to `.env.test` and fill in credentials (never commit `.env.test`)
+- Required env vars: `KANVAS_API_URL`, `KANVAS_X_APP`, `KANVAS_EMAIL`, `KANVAS_PASSWORD`
+- Optional: `KANVAS_X_LOCATION`, `KANVAS_X_KEY`
+- vitest config auto-loads `.env.test` via `dotenv`
+
+### Test structure
+```
+tests/
+  setup.ts              # Shared auth helper — logs in once, reuses token
+  connection.test.ts    # API connectivity and auth verification
+  crm.test.ts           # Leads CRUD, messages, pipelines CRUD, lookups
+  social.test.ts        # Messages CRUD, search, message types
+  inventory.test.ts     # Products, variants, warehouses, channels, categories
+  orders.test.ts        # Search, get
+```
+
+### Key rules for writing tests
+- Tests hit a real API — they create and clean up their own data (create → test → delete)
+- The `getAuthenticatedClient()` helper in `setup.ts` authenticates once and caches the client
+- Some endpoints may return "unauthorized" depending on user permissions — handle gracefully
+- Test timeouts are set to 30s (API can be slow)
+
+### Common GraphQL gotchas caught by tests
+- Paginator fields (`tags`, `custom_fields`, `files`) require `{ data { ... } }` wrapper
+- Filter `value` fields use `Mixed` type, not `String`
+- `PipelineInput` requires `is_default: Boolean!`
+- `PipelineStageInput` uses `pipeline_id` (not `pipelines_id`), and `updatePipelineStage` requires `pipeline_id` in input
 
 ## TODO — Next Features to Build
 

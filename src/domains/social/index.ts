@@ -46,8 +46,10 @@ export class SocialService {
             }
           }
           custom_fields {
-            name
-            value
+            data {
+              name
+              value
+            }
           }
         }
       }
@@ -79,7 +81,6 @@ export class SocialService {
             is_public
             is_locked
             created_at
-            updated_at
             parent {
               id
               uuid
@@ -135,8 +136,10 @@ export class SocialService {
               }
             }
             custom_fields {
-              name
-              value
+              data {
+                name
+                value
+              }
             }
           }
         }
@@ -158,7 +161,6 @@ export class SocialService {
           message
           is_public
           is_locked
-          updated_at
           messageType {
             id
             name
@@ -171,8 +173,10 @@ export class SocialService {
             }
           }
           custom_fields {
-            name
-            value
+            data {
+              name
+              value
+            }
           }
         }
       }

@@ -472,7 +472,7 @@ export class CrmService {
 
   async listLeadMessages(channelSlug: string, first = 50, page = 1) {
     const query = `
-      query LeadMessages($first: Int, $page: Int, $channelSlug: String!) {
+      query LeadMessages($first: Int, $page: Int, $channelSlug: Mixed!) {
         messages(
           first: $first
           page: $page
