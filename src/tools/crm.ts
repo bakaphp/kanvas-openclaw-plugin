@@ -326,6 +326,118 @@ export function registerCrmTools(api: OpenClawPluginApi, service: CrmService, en
     },
   });
 
+  // --- Pipeline Management ---
+
+  api.registerTool({
+    name: "kanvas_create_pipeline",
+    label: "Create Pipeline",
+    description:
+      "Create a new lead pipeline. Optionally include stages in one call. " +
+      "Weight controls display order (lower = first). is_default marks the pipeline used for new leads.",
+    parameters: Type.Object({
+      name: Type.String({ description: "Pipeline name" }),
+      weight: Type.Number({ description: "Sort order (lower = first)" }),
+      is_default: Type.Boolean({ description: "Whether this is the default pipeline for new leads" }),
+      description: Type.Optional(Type.String({ description: "Pipeline description" })),
+      slug: Type.Optional(Type.String({ description: "URL-friendly slug (auto-generated from name if omitted)" })),
+      stages: Type.Optional(Type.Array(Type.Object({
+        name: Type.String({ description: "Stage name" }),
+        rotting_days: Type.Number({ description: "Days before a lead in this stage is considered stale (0 = no rotting)" }),
+        weight: Type.Number({ description: "Sort order within pipeline (lower = first)" }),
+      }), { description: "Initial stages to create with the pipeline" })),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      return toolResult(await service.createPipeline(params));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_update_pipeline",
+    label: "Update Pipeline",
+    description:
+      "Update an existing pipeline's name, weight, default status, or stages. " +
+      "To update existing stages, include stages_id in each stage object.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Pipeline ID" }),
+      name: Type.String({ description: "Pipeline name" }),
+      weight: Type.Number({ description: "Sort order" }),
+      is_default: Type.Boolean({ description: "Whether this is the default pipeline" }),
+      description: Type.Optional(Type.String({ description: "Pipeline description" })),
+      slug: Type.Optional(Type.String({ description: "URL-friendly slug" })),
+      stages: Type.Optional(Type.Array(Type.Object({
+        name: Type.String({ description: "Stage name" }),
+        rotting_days: Type.Number({ description: "Days before rotting (0 = disabled)" }),
+        weight: Type.Number({ description: "Sort order within pipeline" }),
+        stages_id: Type.Optional(Type.String({ description: "Existing stage ID to update (omit to create new)" })),
+      }))),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      const { id, ...input } = params;
+      return toolResult(await service.updatePipeline(id, input));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_delete_pipeline",
+    label: "Delete Pipeline",
+    description: "Delete a pipeline. Will fail if the pipeline still has leads assigned to it.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Pipeline ID" }),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      return toolResult(await service.deletePipeline(params.id));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_create_pipeline_stage",
+    label: "Create Pipeline Stage",
+    description: "Add a new stage to an existing pipeline.",
+    parameters: Type.Object({
+      pipeline_id: Type.String({ description: "Pipeline ID to add the stage to" }),
+      name: Type.String({ description: "Stage name" }),
+      rotting_days: Type.Number({ description: "Days before a lead in this stage is considered stale (0 = no rotting)" }),
+      weight: Type.Number({ description: "Sort order within pipeline (lower = first)" }),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      return toolResult(await service.createPipelineStage(params));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_update_pipeline_stage",
+    label: "Update Pipeline Stage",
+    description: "Update an existing pipeline stage's name, rotting days, or weight.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Stage ID" }),
+      name: Type.String({ description: "Stage name" }),
+      rotting_days: Type.Number({ description: "Days before rotting (0 = disabled)" }),
+      weight: Type.Number({ description: "Sort order within pipeline" }),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      const { id, ...input } = params;
+      return toolResult(await service.updatePipelineStage(id, input));
+    },
+  });
+
+  api.registerTool({
+    name: "kanvas_delete_pipeline_stage",
+    label: "Delete Pipeline Stage",
+    description: "Delete a stage from a pipeline. Will fail if leads are currently in this stage.",
+    parameters: Type.Object({
+      id: Type.String({ description: "Stage ID" }),
+    }),
+    async execute(_id, params) {
+      await ensureAuth();
+      return toolResult(await service.deletePipelineStage(params.id));
+    },
+  });
+
   api.registerTool({
     name: "kanvas_list_lead_statuses",
     label: "List Lead Statuses",

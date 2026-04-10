@@ -740,9 +740,15 @@ export class CrmService {
           data {
             id
             name
+            slug
+            weight
+            is_default
+            description
             stages {
               id
               name
+              rotting_days
+              weight
             }
           }
         }
@@ -750,6 +756,130 @@ export class CrmService {
     `;
 
     return this.client.query(query, { first });
+  }
+
+  async createPipeline(input: {
+    name: string;
+    weight: number;
+    is_default: boolean;
+    description?: string;
+    slug?: string;
+    stages?: Array<{ name: string; rotting_days: number; weight: number }>;
+  }) {
+    const mutation = `
+      mutation CreatePipeline($input: PipelineInput!) {
+        createPipeline(input: $input) {
+          id
+          name
+          slug
+          weight
+          is_default
+          description
+          stages {
+            id
+            name
+            rotting_days
+            weight
+          }
+        }
+      }
+    `;
+
+    return this.client.query(mutation, { input });
+  }
+
+  async updatePipeline(id: string, input: {
+    name: string;
+    weight: number;
+    is_default: boolean;
+    description?: string;
+    slug?: string;
+    stages?: Array<{ name: string; rotting_days: number; weight: number; stages_id?: string }>;
+  }) {
+    const mutation = `
+      mutation UpdatePipeline($id: ID!, $input: PipelineInput!) {
+        updatePipeline(id: $id, input: $input) {
+          id
+          name
+          slug
+          weight
+          is_default
+          description
+          stages {
+            id
+            name
+            rotting_days
+            weight
+          }
+        }
+      }
+    `;
+
+    return this.client.query(mutation, { id, input });
+  }
+
+  async deletePipeline(id: string) {
+    const mutation = `
+      mutation DeletePipeline($id: ID!) {
+        deletePipeline(id: $id)
+      }
+    `;
+
+    return this.client.query(mutation, { id });
+  }
+
+  async createPipelineStage(input: {
+    pipeline_id: string;
+    name: string;
+    rotting_days: number;
+    weight: number;
+    config?: unknown;
+  }) {
+    const mutation = `
+      mutation CreatePipelineStage($input: PipelineStageInput!) {
+        createPipelineStage(input: $input) {
+          id
+          name
+          rotting_days
+          weight
+          pipeline { id name }
+        }
+      }
+    `;
+
+    return this.client.query(mutation, { input });
+  }
+
+  async updatePipelineStage(id: string, input: {
+    name: string;
+    rotting_days: number;
+    weight: number;
+    pipeline_id?: string;
+    config?: unknown;
+  }) {
+    const mutation = `
+      mutation UpdatePipelineStage($id: ID!, $input: PipelineStageInput!) {
+        updatePipelineStage(id: $id, input: $input) {
+          id
+          name
+          rotting_days
+          weight
+          pipeline { id name }
+        }
+      }
+    `;
+
+    return this.client.query(mutation, { id, input });
+  }
+
+  async deletePipelineStage(id: string) {
+    const mutation = `
+      mutation DeletePipelineStage($id: ID!) {
+        deletePipelineStage(id: $id)
+      }
+    `;
+
+    return this.client.query(mutation, { id });
   }
 
   async attachFileToLeadByUrl(leadId: string, fileUrl: string, fileName: string) {

@@ -40,8 +40,10 @@ export class SocialService {
             system_modules
           }
           tags {
-            id
-            name
+            data {
+              id
+              name
+            }
           }
           custom_fields {
             name
@@ -127,8 +129,10 @@ export class SocialService {
               }
             }
             tags {
-              id
-              name
+              data {
+                id
+                name
+              }
             }
             custom_fields {
               name
@@ -161,8 +165,10 @@ export class SocialService {
             verb
           }
           tags {
-            id
-            name
+            data {
+              id
+              name
+            }
           }
           custom_fields {
             name
@@ -239,8 +245,10 @@ export class SocialService {
               }
             }
             tags {
-              id
-              name
+              data {
+                id
+                name
+              }
             }
           }
           paginatorInfo {
@@ -315,8 +323,10 @@ export class SocialService {
               system_modules
             }
             tags {
-              id
-              name
+              data {
+                id
+                name
+              }
             }
           }
           paginatorInfo {
