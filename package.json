@@ -32,7 +32,9 @@
     "prepublishOnly": "npm run build",
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
-    "dev": "node --watch --loader ts-node/esm src/index.ts"
+    "dev": "node --watch --loader ts-node/esm src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "engines": {
     "node": ">=20"
@@ -45,8 +47,10 @@
   },
   "devDependencies": {
     "@types/node": "^24.5.2",
+    "dotenv": "^17.4.1",
     "openclaw": "^2026.3.24",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.4"
   }
 }
