@@ -4,10 +4,12 @@ import { CrmService } from "./domains/crm/index.js";
 import { InventoryService } from "./domains/inventory/index.js";
 import { OrdersService } from "./domains/orders/index.js";
 import { SocialService } from "./domains/social/index.js";
+import { EcosystemService } from "./domains/ecosystem/index.js";
 import { registerCrmTools } from "./tools/crm.js";
 import { registerInventoryTools } from "./tools/inventory.js";
 import { registerOrdersTools } from "./tools/orders.js";
 import { registerSocialTools } from "./tools/social.js";
+import { registerEcosystemTools } from "./tools/ecosystem.js";
 import { toolResult } from "./tools/helpers.js";
 import type { KanvasConfig } from "./config/types.js";
 
@@ -23,6 +25,7 @@ let sharedCrm: CrmService | null = null;
 let sharedInventory: InventoryService | null = null;
 let sharedOrders: OrdersService | null = null;
 let sharedSocial: SocialService | null = null;
+let sharedEcosystem: EcosystemService | null = null;
 let startupBannerShown = false;
 let skipBannerShown = false;
 
@@ -122,6 +125,7 @@ export default {
       sharedInventory = new InventoryService(sharedClient);
       sharedOrders = new OrdersService(sharedClient);
       sharedSocial = new SocialService(sharedClient);
+      sharedEcosystem = new EcosystemService(sharedClient);
     }
 
     // Tools and hooks must be registered on every api object — each one is
@@ -132,6 +136,7 @@ export default {
     registerInventoryTools(api, sharedInventory!, ensureAuth);
     registerOrdersTools(api, sharedOrders!, ensureAuth);
     registerSocialTools(api, sharedSocial!, ensureAuth);
+    registerEcosystemTools(api, sharedEcosystem!, ensureAuth);
 
     api.registerTool({
       name: "kanvas_test_connection",
@@ -244,6 +249,19 @@ ALWAYS schedule follow-ups in Kanvas so the human team can see them — NEVER st
 - \`kanvas_create_follow_up\` → create a calendar event for a future action (e.g. "Call Jane re: proposal"). Optionally link to a lead. Requires: name, date, start_time, end_time.
 - \`kanvas_list_events\` → list scheduled events/follow-ups
 - For structured follow-up data (tracking status, priority, custom fields), use \`kanvas_create_message\` with verb "follow_up" and a JSON payload containing { due_date, lead_id, action, status, priority }.
+
+**Ecosystem (Companies, Branches, Roles, Users)**
+Use when the user asks about companies, branches/locations, user management, roles, or permissions.
+- \`kanvas_list_companies\` → list/search companies
+- \`kanvas_list_branches\` → list/search branches (filter by companies_id for a specific company)
+- \`kanvas_list_roles\` → list available roles (find role IDs like "super admin")
+- \`kanvas_list_company_users\` → list users in the current company
+- \`kanvas_add_user_to_company\` → add a user to a company with optional role
+- \`kanvas_remove_user_from_company\` → remove a user from a company
+- \`kanvas_add_user_to_branch\` → add a user to a branch/location
+- \`kanvas_remove_user_from_branch\` → remove a user from a branch
+- \`kanvas_assign_role_to_user\` → assign roles (e.g. super admin). Call \`kanvas_list_roles\` first to get role IDs.
+- \`kanvas_remove_role_from_user\` → remove a role from a user
 
 **Diagnostics**
 - \`kanvas_test_connection\` → verify the API is reachable
