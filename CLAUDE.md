@@ -189,6 +189,7 @@ tests/
 - Filter `value` fields use `Mixed` type, not `String`
 - `PipelineInput` requires `is_default: Boolean!`
 - `PipelineStageInput` uses `pipeline_id` (not `pipelines_id`), and `updatePipelineStage` requires `pipeline_id` in input
+- Lighthouse `@search` **cannot be combined with inline `orderBy`** — API returns "Found arg builder arguments that do not work with @search". When a query supports `search`, drop the `orderBy` clause (or only pass it when not searching).
 
 ## TODO — Next Features to Build
 

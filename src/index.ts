@@ -5,11 +5,15 @@ import { InventoryService } from "./domains/inventory/index.js";
 import { OrdersService } from "./domains/orders/index.js";
 import { SocialService } from "./domains/social/index.js";
 import { EcosystemService } from "./domains/ecosystem/index.js";
+import { DealsService } from "./domains/deals/index.js";
+import { EventsService } from "./domains/events/index.js";
 import { registerCrmTools } from "./tools/crm.js";
 import { registerInventoryTools } from "./tools/inventory.js";
 import { registerOrdersTools } from "./tools/orders.js";
 import { registerSocialTools } from "./tools/social.js";
 import { registerEcosystemTools } from "./tools/ecosystem.js";
+import { registerDealsTools } from "./tools/deals.js";
+import { registerEventsTools } from "./tools/events.js";
 import { toolResult } from "./tools/helpers.js";
 import type { KanvasConfig } from "./config/types.js";
 
@@ -26,6 +30,8 @@ let sharedInventory: InventoryService | null = null;
 let sharedOrders: OrdersService | null = null;
 let sharedSocial: SocialService | null = null;
 let sharedEcosystem: EcosystemService | null = null;
+let sharedDeals: DealsService | null = null;
+let sharedEvents: EventsService | null = null;
 let startupBannerShown = false;
 let skipBannerShown = false;
 
@@ -126,6 +132,8 @@ export default {
       sharedOrders = new OrdersService(sharedClient);
       sharedSocial = new SocialService(sharedClient);
       sharedEcosystem = new EcosystemService(sharedClient);
+      sharedDeals = new DealsService(sharedClient);
+      sharedEvents = new EventsService(sharedClient);
     }
 
     // Tools and hooks must be registered on every api object — each one is
@@ -137,6 +145,8 @@ export default {
     registerOrdersTools(api, sharedOrders!, ensureAuth);
     registerSocialTools(api, sharedSocial!, ensureAuth);
     registerEcosystemTools(api, sharedEcosystem!, ensureAuth);
+    registerDealsTools(api, sharedDeals!, ensureAuth);
+    registerEventsTools(api, sharedEvents!, ensureAuth);
 
     api.registerTool({
       name: "kanvas_test_connection",
@@ -168,7 +178,7 @@ export default {
 
     if (!startupBannerShown) {
       startupBannerShown = true;
-      api.logger.info("Kanvas plugin registered — 53 tools loaded");
+      api.logger.info("Kanvas plugin registered — 73 tools loaded");
     }
   },
 };
@@ -243,12 +253,39 @@ Use when the user asks about products, stock, warehouses, or catalog.
 Use when the user asks about orders, purchases, or sales.
 - \`kanvas_search_orders\` → find orders by number or keyword
 - \`kanvas_get_order\` → full order detail with items, customer, status
+- \`kanvas_list_order_statuses\` → get status slugs for transitions
+- \`kanvas_list_order_types\` → order type pipelines (standard, subscription, etc.)
+- \`kanvas_list_regions\` → regions for order creation (get region_id)
+- \`kanvas_create_draft_order\` → create a draft order. Requires email, customer, region_id (from kanvas_list_regions), and items with variant_id+quantity (from kanvas_list_variants)
+- \`kanvas_update_order\` → update items, status, metadata
+- \`kanvas_update_draft_order_status\` → change draft order status (PENDING, COMPLETED, DRAFT, CANCELED, FAILED)
+- \`kanvas_transition_order_status\` → move through the order status pipeline (use status_slug from kanvas_list_order_statuses)
+- \`kanvas_order_change_customer\` → change the customer on an order (requires xKanvasKey)
+- \`kanvas_delete_order\` → delete an order
+- \`kanvas_send_order_email\` → send a confirmation/receipt email (requires xKanvasKey)
 
 **Follow-ups & Reminders**
 ALWAYS schedule follow-ups in Kanvas so the human team can see them — NEVER store them only in local memory.
 - \`kanvas_create_follow_up\` → create a calendar event for a future action (e.g. "Call Jane re: proposal"). Optionally link to a lead. Requires: name, date, start_time, end_time.
 - \`kanvas_list_events\` → list scheduled events/follow-ups
 - For structured follow-up data (tracking status, priority, custom fields), use \`kanvas_create_message\` with verb "follow_up" and a JSON payload containing { due_date, lead_id, action, status, priority }.
+
+**Deals (Sales Opportunities)**
+Use when the user asks about deals, opportunities, sales tracking. A deal is a potential sale, often tied to a lead/person/organization and moved through a pipeline.
+- \`kanvas_list_deals\` → list/search deals with owner, pipeline, stage, status
+- \`kanvas_get_deal\` → full deal detail including tags and custom fields
+- \`kanvas_create_deal\` → create a deal (only title required; optionally link to lead, person, org, pipeline, owner)
+- \`kanvas_update_deal\` → update title, description, pipeline stage, owner, linked entities
+- \`kanvas_delete_deal\` → delete a deal
+
+**Events (Full event management)**
+For simple follow-ups linked to a lead, prefer \`kanvas_create_follow_up\`. Use these when the user wants richer event management (categories, types, resources, tags).
+- \`kanvas_list_events_full\` → list events with versions and dates
+- \`kanvas_get_event\` → event detail including versions, tags, custom fields
+- \`kanvas_create_event\` → create an event with one or more dates. Supports linking to resources (leads, deals), categories, types, tags.
+- \`kanvas_update_event\` → update name, description, dates, status
+- \`kanvas_delete_event\` → delete an event
+- \`kanvas_follow_event\` / \`kanvas_unfollow_event\` → subscribe/unsubscribe user to event updates
 
 **Ecosystem (Companies, Branches, Roles, Users)**
 Use when the user asks about companies, branches/locations, user management, roles, or permissions.
