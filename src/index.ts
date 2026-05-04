@@ -7,6 +7,7 @@ import { SocialService } from "./domains/social/index.js";
 import { EcosystemService } from "./domains/ecosystem/index.js";
 import { DealsService } from "./domains/deals/index.js";
 import { EventsService } from "./domains/events/index.js";
+import { NervousSystemService } from "./domains/nervousSystem/index.js";
 import { registerCrmTools } from "./tools/crm.js";
 import { registerInventoryTools } from "./tools/inventory.js";
 import { registerOrdersTools } from "./tools/orders.js";
@@ -14,6 +15,7 @@ import { registerSocialTools } from "./tools/social.js";
 import { registerEcosystemTools } from "./tools/ecosystem.js";
 import { registerDealsTools } from "./tools/deals.js";
 import { registerEventsTools } from "./tools/events.js";
+import { registerNervousSystemTools } from "./tools/nervousSystem.js";
 import { toolResult } from "./tools/helpers.js";
 import type { KanvasConfig } from "./config/types.js";
 
@@ -32,6 +34,7 @@ let sharedSocial: SocialService | null = null;
 let sharedEcosystem: EcosystemService | null = null;
 let sharedDeals: DealsService | null = null;
 let sharedEvents: EventsService | null = null;
+let sharedNervousSystem: NervousSystemService | null = null;
 let startupBannerShown = false;
 let skipBannerShown = false;
 
@@ -134,6 +137,7 @@ export default {
       sharedEcosystem = new EcosystemService(sharedClient);
       sharedDeals = new DealsService(sharedClient);
       sharedEvents = new EventsService(sharedClient);
+      sharedNervousSystem = new NervousSystemService(sharedClient);
     }
 
     // Tools and hooks must be registered on every api object — each one is
@@ -147,6 +151,7 @@ export default {
     registerEcosystemTools(api, sharedEcosystem!, ensureAuth);
     registerDealsTools(api, sharedDeals!, ensureAuth);
     registerEventsTools(api, sharedEvents!, ensureAuth);
+    registerNervousSystemTools(api, sharedNervousSystem!, ensureAuth);
 
     api.registerTool({
       name: "kanvas_test_connection",
@@ -178,7 +183,7 @@ export default {
 
     if (!startupBannerShown) {
       startupBannerShown = true;
-      api.logger.info("Kanvas plugin registered — 73 tools loaded");
+      api.logger.info("Kanvas plugin registered — 84 tools loaded");
     }
   },
 };
@@ -299,6 +304,21 @@ Use when the user asks about companies, branches/locations, user management, rol
 - \`kanvas_remove_user_from_branch\` → remove a user from a branch
 - \`kanvas_assign_role_to_user\` → assign roles (e.g. super admin). Call \`kanvas_list_roles\` first to get role IDs.
 - \`kanvas_remove_role_from_user\` → remove a role from a user
+
+**Nervous System (Plans, Tasks, Activities)**
+This is how humans assign work to you. Read the \`nervous-system-working\` skill for the full protocol. Treat every non-trivial request as a Plan; plan first, execute second. Move statuses deliberately — humans watch the kanban.
+- \`kanvas_list_my_plans\` → find work assigned to you (filter by statuses: draft/awaiting_approval/active/blocked)
+- \`kanvas_get_plan\` → full plan detail (description, input, tasks, files, parent)
+- \`kanvas_create_plan\` → create plan or sub-plan, optionally with seeded tasks
+- \`kanvas_update_plan\` → transition status (draft→active→done/blocked/failed), set output JSON, attach files
+- \`kanvas_approve_plan\` → approve/reject a plan in awaiting_approval
+- \`kanvas_add_task\` → append a task to the checklist (sequence determines order)
+- \`kanvas_update_task_status\` → pending → in_progress → done (or blocked/failed)
+- \`kanvas_list_agent_capabilities\` → list skills/tools granted to an agent
+- \`kanvas_delete_plan\` / \`kanvas_delete_task\` → delete
+- For Activities (the conversation channel), use \`kanvas_create_message\` with \`channel_slug = plan.uuid\` and \`message_verb: "comment"\`. Read with \`kanvas_list_channel_messages\` using the same slug.
+- **Always re-read the channel** before acting on a plan you've worked on before.
+- **Never act** on a plan with \`requires_human_approval=true\` until it's flipped to active.
 
 **Diagnostics**
 - \`kanvas_test_connection\` → verify the API is reachable
