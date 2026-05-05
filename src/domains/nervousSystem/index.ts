@@ -35,8 +35,8 @@ const PLAN_DETAIL_FIELDS = `
   approver { id firstname lastname }
   parent { id title status }
   tasks { id sequence title description status blocked_reason result started_at completed_at }
-  files { id uuid name url }
-  tags { id name }
+  files { data { id uuid name url } }
+  tags { data { id name } }
 `;
 
 const PLAN_LIST_FIELDS = `
