@@ -118,6 +118,26 @@ For each task, in sequence order:
 
 When you transition a task, the system emits a ledger event AND a Pusher broadcast — humans watching the kanban see your progress in real time. **You don't need to do anything extra to "notify" them**; status transitions are the notification.
 
+### 4a. Roll up plan status after every task transition
+
+After **every** task status change, look at the rest of the tasks in the plan and reconcile the plan's status. The plan should always reflect the aggregate state of its tasks:
+
+| Task states in the plan | Plan status |
+|---|---|
+| All tasks `done` (and at least one task exists) | `done` |
+| Any task `blocked` | `blocked` |
+| At least one `in_progress` or `pending`, none blocked | `active` (leave it alone) |
+| All tasks `failed` / `cancelled` | `failed` (use judgment — comment first) |
+
+**Examples:**
+
+- You just finished the last `pending` task → flip the plan to `done` (and set `output` JSON, see §10).
+- You marked a task `blocked` because you're stuck → flip the plan to `blocked` (and add a comment, see §8).
+- You marked a task `done` but other tasks are still `pending` → **leave the plan on `active`**. Do nothing more.
+- A previously blocked task got unblocked and you moved it back to `in_progress` → if the plan was `blocked` and no other tasks are blocked, flip the plan back to `active`.
+
+The status transition is what humans see on the kanban — keeping the plan in sync with its tasks is how the board stays trustworthy. **Never** leave a plan on `active` when all tasks are done, and **never** leave a plan on `active` when a task is blocked. If you forget this step, the human's dashboard lies.
+
 ---
 
 ## 5. Add files / artifacts as you produce them
@@ -291,6 +311,7 @@ Better to ask once than apologize a hundred times.
 - [ ] If no tasks, write the checklist before doing anything (`kanvas_add_task` or include in `kanvas_create_plan`)
 - [ ] If `requires_human_approval=true`, **don't act** — leave a comment with your proposed approach and wait
 - [ ] Move tasks `pending → in_progress → done` one at a time, in sequence order
+- [ ] **After every task transition, roll up the plan's status** — all tasks `done` → plan `done`; any task `blocked` → plan `blocked`; otherwise leave plan on `active`
 - [ ] Comment when something non-obvious happens
 - [ ] Block + comment if you can't proceed
 - [ ] Set a useful `output` JSON before flipping to `done`
