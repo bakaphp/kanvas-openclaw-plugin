@@ -23,7 +23,11 @@ Use the native `kanvas_update_lead` tool.
 ### 3. Updating Contacts (People)
 Use the native `kanvas_update_people` tool.
 - You can seamlessly append phone numbers, emails, and custom fields to a Contact profile.
-- Pass the contacts array with the correct `contacts_types_id` (e.g., 1 for Email, 2 for Phone). Call `kanvas_list_contact_types` first if you are unsure of the IDs.
+- Pass the contacts array with the correct `contacts_types_id`. **Well-known IDs (use directly, no lookup needed):**
+  - `1` → Email
+  - `2` → Phone
+  - `3` → Cell Phone
+- For any other contact type (LinkedIn, Twitter, etc.), call `kanvas_list_contact_types` to look up the ID.
 
 ### 4. File Attachments
 Use the native tools:
@@ -69,9 +73,9 @@ When attaching a drafted cold email or pitch to a Lead profile for human review,
 
 ### 11. Apollo Integration & Contact Enrichment
 When using Apollo API to source leads, always extract the following fields and map them to Kanvas:
-- **Email:** Use `kanvas_list_contact_types` to find the ID (usually 1) and map to `contacts: [{ value: email, contacts_types_id: 1 }]`.
-- **LinkedIn Profile (Optional):** If the contact has a `linkedin_url`, extract it and map to `contacts: [{ value: linkedin_url, contacts_types_id: 5 }]`. Do not fail or block the lead creation if the LinkedIn profile is missing.
-- **Phone Numbers:** Apollo requires a webhook to reveal direct phone numbers. Until this is built into Kanvas, phone numbers cannot be automatically extracted via the synchronous API.
+- **Email:** Map to `contacts: [{ value: email, contacts_types_id: 1 }]` — ID 1 is Email (well-known, no lookup needed).
+- **Phone Numbers:** Apollo requires a webhook to reveal direct phone numbers. When available, map to `contacts_types_id: 2` (Phone) or `3` (Cell Phone).
+- **LinkedIn Profile (Optional):** Look up the LinkedIn `contacts_types_id` via `kanvas_list_contact_types` (typically 5, but verify per app). Map to `contacts: [{ value: linkedin_url, contacts_types_id: <id> }]`. Do not fail or block lead creation if LinkedIn is missing.
 
 ### 12. White-Labeling & Value Communication
 When communicating with the leadership team, founders, or human architects, NEVER mention the specific technical backend tools (e.g., Apollo, Kanvas, OpenClaw, GraphQL).

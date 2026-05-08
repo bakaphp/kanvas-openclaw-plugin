@@ -222,6 +222,13 @@ describe("CRM — Lookups", () => {
     expect(Array.isArray(types)).toBe(true);
   });
 
+  it("listContactTypes returns data", async () => {
+    const res = await crm.listContactTypes();
+    expect(res.errors).toBeFalsy();
+    const types = (res.data as any).contactType.data;
+    expect(Array.isArray(types)).toBe(true);
+  });
+
   it("searchPeople returns results", async () => {
     const res = await crm.searchPeople("test", 5);
     expect(res.errors).toBeFalsy();

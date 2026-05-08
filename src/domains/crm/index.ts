@@ -1131,7 +1131,7 @@ export class CrmService {
   async listContactTypes(first = 50) {
     const query = `
       query ContactTypes($first: Int) {
-        contactTypes(first: $first) {
+        contactType(first: $first) {
           data {
             id
             name
